@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XChat</title>
+    <link rel="icon" type="image/png" href="./images/favicon.png">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            background: #1a1a1a;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            display: flex;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 20%;
+            background: #222;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            text-align: left;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .connect-section {
+            padding: 10px;
+        }
+        .connect-section button {
+            padding: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .connect-section button:hover {
+            background: #ccc;
+        }
+        .connect-section button.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .button-group {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .button-group button {
+            padding: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            width: 100%;
+            text-align: left;
+        }
+        .button-group button:hover {
+            background: #ccc;
+        }
+        .button-group button.disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .user-item {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+        .user-item:hover {
+            background: #333;
+        }
+        .user-item img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: contain;
+        }
+        .user-item .group-header {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .user-item .group-name {
+            font-weight: bold;
+            color: #fff;
+            font-size: 1em;
+            margin-right: auto;
+        }
+        .user-item .status {
+            font-size: 0.8em;
+            color: #ccc;
+            margin-top: 5px;
+            width: 100%;
+        }
+        .user-item .action-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            width: 100%;
+            justify-content: flex-end;
+        }
+        .user-item button {
+            padding: 5px 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .user-item button:hover {
+            background: #ccc;
+        }
+        .chat-header {
+            padding: 8px 12px;
+            background: #222;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-header .info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-header .name {
+            font-weight: bold;
+            color: #fff;
+            background: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .chat-header .badge {
+            background: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #fff;
+        }
+        .chat-header .refresh-btn {
+            padding: 6px 16px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .chat-header .refresh-btn:hover {
+            background: #ccc;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #222;
+        }
+        .message {
+            margin: 10px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message.sent {
+            justify-content: flex-end;
+        }
+        .message.received {
+            justify-content: flex-start;
+        }
+        .message-content {
+            max-width: 60%;
+            padding: 10px;
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.sent .message-content {
+            background: #fff;
+            color: #000;
+        }
+        .message.received .message-content {
+            background: #333;
+            color: #fff;
+            box-shadow: 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .message-sender {
+            font-size: 0.7em;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+        .message-text {
+            word-wrap: break-word;
+        }
+        .message-timestamp {
+            font-size: 0.6em;
+            color: #ccc;
+            align-self: flex-end;
+            margin-top: 5px;
+        }
+        .input-area {
+            display: flex;
+            padding: 8px 12px;
+            background: #222;
+            border-top: 1px solid #333;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 6px 12px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            margin-right: 10px;
+            outline: none;
+            font-size: 0.9em;
+        }
+        .input-area .send-btn {
+            padding: 6px 16px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .input-area .send-btn:hover {
+            background: #ccc;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 2px solid #fff;
+            color: #fff;
+        }
+        .modal-content input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            background: #333;
+            color: #fff;
+        }
+        .modal-content button {
+            padding: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .modal-content button:hover {
+            background: #ccc;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        @media (max-width: 600px) {
+            .container { height: 100vh; border-radius: 0; box-shadow: none; }
+            .sidebar { width: 35%; }
+            .chat-area { flex: 1; }
+            .header { font-size: 1em; }
+            .message-content { max-width: 80%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="header">XChat</div>
+            <div class="connect-section">
+                <button id="connectWalletButton">连接钱包</button>
+                <div id="networkStatus" class="status">点击连接...</div>
+            </div>
+            <div class="button-group">
+                <button id="createGroupButton" onclick="openCreateGroupModal()">创建群组</button>
+                <button onclick="joinGroup()">加入群组</button>
+                <button id="setNicknameButton" onclick="openSetNicknameModal()">设置昵称</button>
+            </div>
+            <ul class="user-list" id="groupList"></ul>
+        </div>
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="info">
+                    <div class="name" id="chatTitle">选择群组</div>
+                    <div class="badge" id="messageCount">0 条消息</div>
+                </div>
+                <button class="refresh-btn" onclick="loadMessages()">刷新</button>
+            </div>
+            <div class="messages" id="messageList"></div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="输入消息...">
+                <button class="send-btn" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="createGroupModal">
+        <div class="modal-content">
+            <h2>创建群组</h2>
+            <input type="text" id="groupName" placeholder="群组名称（最多20字符）">
+            <input type="text" id="paymentTokenInput" placeholder="输入代币合约地址">
+            <input type="text" id="joinFee" placeholder="加入费用（最低10）">
+            <button onclick="createGroup()">创建</button>
+            <button onclick="closeModal('createGroupModal')">取消</button>
+            <div class="status" id="createStatus"></div>
+        </div>
+    </div>
+    <div class="modal" id="joinGroupModal">
+        <div class="modal-content">
+            <h2>加入群组</h2>
+            <input type="text" id="groupIdInput" placeholder="群组ID">
+            <div class="status" id="joinFeeInfo"></div>
+            <button onclick="joinGroupConfirm()">加入</button>
+            <button onclick="closeModal('joinGroupModal')">取消</button>
+            <div class="status" id="joinStatus"></div>
+        </div>
+    </div>
+    <div class="modal" id="setNicknameModal">
+        <div class="modal-content">
+            <h2>设置昵称</h2>
+            <input type="text" id="nicknameInput" placeholder="输入Token ID">
+            <button onclick="setNickname()">保存</button>
+            <button onclick="closeModal('setNicknameModal')">取消</button>
+            <div class="status" id="nicknameStatus"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+    <script>
+        let web3, accounts, contract;
+        const contractAddress = "0xFeC6922E267E980735084223D2a53543F692413D";
+        const contractABI = [
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "creator",
+                        "type": "address"
+                    }
+                ],
+                "name": "GroupCreated",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "member",
+                        "type": "address"
+                    }
+                ],
+                "name": "MemberJoined",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "member",
+                        "type": "address"
+                    }
+                ],
+                "name": "MemberLeft",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "content",
+                        "type": "string"
+                    }
+                ],
+                "name": "MessageSent",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "newNickname",
+                        "type": "string"
+                    }
+                ],
+                "name": "NicknameUpdated",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "paymentToken",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "joinFee",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "createGroup",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getGroupMembersCount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "startIndex",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "count",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getMessages",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "address",
+                                "name": "sender",
+                                "type": "address"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "content",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "timestamp",
+                                "type": "uint256"
+                            }
+                        ],
+                        "internalType": "struct XChat.Message[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getNickname",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "creator",
+                        "type": "address"
+                    }
+                ],
+                "name": "getGroupIdByCreator",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "hasGroup",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getUserJoinedGroups",
+                "outputs": [
+                    {
+                        "internalType": "uint256[]",
+                        "name": "",
+                        "type": "uint256[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "joinGroup",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "leaveGroup",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "groupId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "content",
+                        "type": "string"
+                    }
+                ],
+                "name": "sendMessage",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setNickname",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "tokenAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "withdrawAllTokens",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "withdrawBONE",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "groups",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "creator",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "paymentToken",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "joinFee",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "memberCount",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "stateMutability": "payable",
+                "type": "receive"
+            }
+        ];
+        const xLayer = {
+            chainId: 196,
+            chainName: 'X Layer mainnet',
+            nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+            rpcUrls: ['https://rpc.xlayer.tech', 'https://xlayerrpc.okx.com'],
+            blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer']
+        };
+        let currentGroupId = null;
+
+        async function connectWallet() {
+            const status = document.getElementById('networkStatus');
+            const connectButton = document.getElementById('connectWalletButton');
+            try {
+                if (!window.ethereum) {
+                    status.innerHTML = '未检测到钱包，请安装 <a href="https://metamask.io" target="_blank">MetaMask</a> 并通过本地服务器运行（如 "npx serve"）。';
+                    throw new Error("未检测到钱包");
+                }
+                connectButton.classList.add('loading');
+                status.innerText = "连接中...";
+                web3 = new Web3(window.ethereum);
+                accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (!accounts.length) throw new Error("请解锁或连接钱包");
+                const chainId = await web3.eth.getChainId();
+                if (chainId !== 196) {
+                    try {
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: "0xc4" }] });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [xLayer] });
+                        else throw switchError;
+                    }
+                }
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                const nickname = await contract.methods.getNickname(accounts[0]).call() || accounts[0].slice(0, 6) + "..." + accounts[0].slice(-4);
+                connectButton.innerHTML = `已连接: ${nickname}`;
+                status.innerText = "已连接到X Layer主网";
+                updateButtons();
+                updateGroupList();
+                setupEventListeners();
+            } catch (error) {
+                console.error(error);
+                status.innerText = "连接失败: " + error.message;
+            } finally {
+                connectButton.classList.remove('loading');
+            }
+        }
+
+        async function updateButtons() {
+            if (!contract || !accounts) return;
+            const result = await contract.methods.getGroupIdByCreator(accounts[0]).call();
+            const createButton = document.getElementById('createGroupButton');
+            if (result.hasGroup) {
+                createButton.textContent = `群组ID: ${result.groupId}`;
+                createButton.classList.add('disabled');
+                createButton.onclick = null;
+            } else {
+                createButton.textContent = '创建群组';
+                createButton.classList.remove('disabled');
+                createButton.onclick = () => openCreateGroupModal();
+            }
+            const nickname = await contract.methods.getNickname(accounts[0]).call();
+            const nicknameButton = document.getElementById('setNicknameButton');
+            if (nickname && nickname.trim() !== '') {
+                nicknameButton.textContent = nickname;
+                nicknameButton.classList.add('disabled');
+                nicknameButton.onclick = null;
+            } else {
+                nicknameButton.textContent = '设置昵称';
+                nicknameButton.classList.remove('disabled');
+                nicknameButton.onclick = () => openSetNicknameModal();
+            }
+        }
+
+        async function updateGroupList() {
+            if (!contract || !accounts) return;
+            const groupIds = await contract.methods.getUserJoinedGroups(accounts[0]).call();
+            const groupList = document.getElementById('groupList');
+            groupList.innerHTML = '';
+            for (let groupId of groupIds) {
+                const group = await contract.methods.groups(groupId).call();
+                const nickname = await contract.methods.getNickname(accounts[0]).call() || accounts[0].slice(0, 6) + "...";
+                const li = document.createElement('li');
+                li.className = 'user-item';
+                li.innerHTML = `
+                    <div class="group-header">
+                        <img src="./images/group.png" alt="群组">
+                        <div class="group-name">${group.name}</div>
+                    </div>
+                    <div class="status">成员: ${group.memberCount} | 您: ${nickname} | 费用: ${web3.utils.fromWei(group.joinFee, "ether")} 代币</div>
+                    <div class="action-buttons">
+                        <button onclick="selectGroup(${groupId})">聊天</button>
+                        <button onclick="leaveGroup(${groupId})">退出</button>
+                    </div>
+                `;
+                groupList.appendChild(li);
+            }
+        }
+
+        function openCreateGroupModal() { document.getElementById('createGroupModal').style.display = 'flex'; }
+        function joinGroup() { document.getElementById('joinGroupModal').style.display = 'flex'; }
+        function openSetNicknameModal() { document.getElementById('setNicknameModal').style.display = 'flex'; }
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            document.querySelectorAll('.status').forEach(s => s.innerText = '');
+        }
+
+        async function createGroup() {
+            if (!contract || !accounts) return alert("请先连接钱包！");
+            const name = document.getElementById('groupName').value;
+            const paymentToken = document.getElementById('paymentTokenInput').value;
+            const joinFee = document.getElementById('joinFee').value;
+            if (!name || !paymentToken || !joinFee) return alert("请填写所有字段！");
+            if (!web3.utils.isAddress(paymentToken)) return alert("请输入有效的代币地址！");
+            try {
+                await contract.methods.createGroup(name, paymentToken, web3.utils.toWei(joinFee, "ether")).send({ from: accounts[0] });
+                document.getElementById('createStatus').innerText = "群组创建成功！";
+                updateGroupList();
+                updateButtons();
+                closeModal('createGroupModal');
+            } catch (error) {
+                document.getElementById('createStatus').innerText = "创建失败: " + error.message;
+            }
+        }
+
+        async function joinGroupConfirm() {
+            if (!contract || !accounts) return alert("请先连接钱包！");
+            const groupId = document.getElementById('groupIdInput').value;
+            try {
+                const group = await contract.methods.groups(groupId).call();
+                const joinFeeWei = group.joinFee;
+                const joinFeeEther = web3.utils.fromWei(joinFeeWei, "ether");
+                document.getElementById('joinFeeInfo').innerText = `加入费用: ${joinFeeEther} 代币`;
+                const tokenContract = new web3.eth.Contract([
+                    {
+                        "inputs": [
+                            {"internalType": "address", "name": "spender", "type": "address"},
+                            {"internalType": "uint256", "name": "amount", "type": "uint256"}
+                        ],
+                        "name": "approve",
+                        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    }
+                ], group.paymentToken);
+                await tokenContract.methods.approve(contractAddress, joinFeeWei).send({ from: accounts[0] });
+                await contract.methods.joinGroup(groupId).send({ from: accounts[0] });
+                document.getElementById('joinStatus').innerText = "加入成功！";
+                updateGroupList();
+                if (currentGroupId === parseInt(groupId)) loadMessages();
+                closeModal('joinGroupModal');
+            } catch (error) {
+                document.getElementById('joinStatus').innerText = "加入失败: " + error.message;
+            }
+        }
+
+        async function leaveGroup(groupId) {
+            if (!contract || !accounts) return alert("请先连接钱包！");
+            try {
+                await contract.methods.leaveGroup(groupId).send({ from: accounts[0] });
+                alert("已退出群组！");
+                updateGroupList();
+                if (currentGroupId === groupId) {
+                    currentGroupId = null;
+                    document.getElementById('messageList').innerHTML = '';
+                    document.getElementById('chatTitle').innerText = '选择群组';
+                    document.getElementById('messageCount').innerText = '0 条消息';
+                }
+            } catch (error) {
+                alert("退出失败: " + error.message);
+            }
+        }
+
+        async function selectGroup(groupId) {
+            currentGroupId = parseInt(groupId);
+            const group = await contract.methods.groups(currentGroupId).call();
+            document.getElementById('chatTitle').innerText = group.name;
+            const messages = await contract.methods.getMessages(currentGroupId, 0, 100).call();
+            document.getElementById('messageCount').innerText = `${messages.length} 条消息`;
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            if (!contract || !accounts || !currentGroupId) return alert("请先选择群组！");
+            try {
+                const joinedGroups = await contract.methods.getUserJoinedGroups(accounts[0]).call();
+                if (!joinedGroups.includes(currentGroupId.toString())) return alert("您不是群组成员！");
+                const messages = await contract.methods.getMessages(currentGroupId, 0, 100).call();
+                const messageList = document.getElementById('messageList');
+                if (messages.length) {
+                    const messageHTML = await Promise.all(messages.map(async msg => {
+                        const senderNickname = msg.sender === accounts[0] ? (await contract.methods.getNickname(accounts[0]).call() || accounts[0].slice(0, 6) + "...") : (await contract.methods.getNickname(msg.sender).call() || msg.sender.slice(0, 6) + "...");
+                        return `
+                            <div class="message ${msg.sender.toLowerCase() === accounts[0].toLowerCase() ? 'sent' : 'received'}">
+                                <div class="message-content">
+                                    <div class="message-sender">${senderNickname}</div>
+                                    <div class="message-text">${msg.content}</div>
+                                    <div class="message-timestamp">${new Date(msg.timestamp * 1000).toLocaleTimeString()}</div>
+                                </div>
+                            </div>
+                        `;
+                    }));
+                    messageList.innerHTML = messageHTML.join('');
+                } else {
+                    messageList.innerHTML = '<div style="text-align: center; color: #ccc;">暂无消息！</div>';
+                }
+                messageList.scrollTop = messageList.scrollHeight;
+            } catch (error) {
+                alert("加载失败: " + error.message);
+            }
+        }
+
+        async function sendMessage() {
+            if (!contract || !accounts || !currentGroupId) return alert("请先选择群组！");
+            const content = document.getElementById('messageInput').value;
+            if (!content) return;
+            try {
+                await contract.methods.sendMessage(currentGroupId, content).send({ from: accounts[0] });
+                document.getElementById('messageInput').value = '';
+                loadMessages();
+            } catch (error) {
+                alert("发送失败: " + error.message);
+            }
+        }
+
+        async function setNickname() {
+            if (!contract || !accounts) return alert("请先连接钱包！");
+            const tokenId = document.getElementById('nicknameInput').value;
+            try {
+                await contract.methods.setNickname(tokenId).send({ from: accounts[0] });
+                document.getElementById('nicknameStatus').innerText = "昵称设置成功！";
+                updateGroupList();
+                updateButtons();
+                if (currentGroupId) loadMessages();
+                closeModal('setNicknameModal');
+            } catch (error) {
+                document.getElementById('nicknameStatus').innerText = "设置失败: " + error.message;
+            }
+        }
+
+        function setupEventListeners() {
+            if (!contract) return;
+            contract.events.allEvents({ fromBlock: 'latest' }, (error, event) => {
+                if (!error) {
+                    if (event.event === 'MessageSent' && currentGroupId === parseInt(event.returnValues.groupId)) loadMessages();
+                    if (event.event === 'MemberJoined' && accounts[0].toLowerCase() === event.returnValues.member.toLowerCase()) updateGroupList();
+                    if (event.event === 'MemberLeft' && accounts[0].toLowerCase() === event.returnValues.member.toLowerCase()) updateGroupList();
+                    if (event.event === 'NicknameUpdated') {
+                        updateGroupList();
+                        updateButtons();
+                        if (currentGroupId) loadMessages();
+                    }
+                }
+            });
+        }
+
+        document.getElementById('connectWalletButton').addEventListener('click', connectWallet);
+
+        window.ethereum?.on('chainChanged', (chainId) => {
+            if (parseInt(chainId, 16) !== 196) {
+                document.getElementById('networkStatus').innerText = "网络错误，请重新连接到X Layer主网。";
+                web3 = null;
+                contract = null;
+                accounts = null;
+                document.getElementById('connectWalletButton').textContent = '连接钱包';
+            } else {
+                connectWallet();
+            }
+        });
+
+        window.ethereum?.on('accountsChanged', (newAccounts) => {
+            if (newAccounts.length) {
+                connectWallet();
+            } else {
+                document.getElementById('networkStatus').innerText = "钱包已断开，请重新连接。";
+                web3 = null;
+                contract = null;
+                accounts = null;
+                document.getElementById('connectWalletButton').textContent = '连接钱包';
+            }
+        });
+
+        window.addEventListener('load', () => {
+            if (!window.location.protocol.startsWith('http')) {
+                document.getElementById('networkStatus').innerHTML = '请通过本地服务器运行此页面（如 "npx serve"）以连接MetaMask。';
+            } else if (!window.ethereum) {
+                document.getElementById('networkStatus').innerHTML = '未检测到钱包，请安装 <a href="https://metamask.io" target="_blank">MetaMask</a>。';
+            }
+        });
+    </script>
+</body>
+</html>
